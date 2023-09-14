@@ -1,0 +1,170 @@
+import torch
+from torch.nn import functional as F
+from teacher.RGBDincomplete import build_model
+from student.RGBDincomplete import build_model_student
+from distiller import build_model_kd
+import numpy as np
+import os
+import cv2
+import time
+from torch.utils.tensorboard import SummaryWriter
+from torchvision.utils import make_grid
+writer = SummaryWriter('log/run' + time.strftime("%d-%m"))
+import torch.nn as nn
+import argparse
+import os.path as osp
+import os
+size_coarse1 = (192,192)
+size_coarse2 = (96,96)
+size_coarse3 = (48,48)
+size_coarse4 = (24,24)
+from tqdm import trange, tqdm
+
+
+
+
+class Solver(object):
+    def __init__(self, train_loader, test_loader, config):
+        self.train_loader = train_loader
+      
+        self.test_loader = test_loader
+        self.config = config
+        self.iter_size = config.iter_size
+        self.show_every = config.show_every
+        #self.build_model()
+        self.net = build_model(self.config.network, self.config.arch)
+        self.net_s = build_model_student(self.config.network, self.config.arch)
+        self.net_kd=build_model_kd(self.net, self.net_s)
+        #self.net.eval()
+        
+        print('Loading pre-trained teacher model for kd from %s...' % self.config.model_t)
+        self.net.load_state_dict(torch.load(self.config.model_t))
+        if config.mode == 'test':
+            print('Loading pre-trained model for testing from %s...' % self.config.model)
+            self.net_kd.load_state_dict(torch.load(self.config.model, map_location=torch.device('cpu')))
+        if config.mode == 'train':
+            if self.config.load == '':
+                print("Loading pre-trained imagenet weights for fine tuning")
+                self.net_s.RGBDInModule.load_pretrained_model(self.config.pretrained_model
+                                                        if isinstance(self.config.pretrained_model, str)
+                                                        else self.config.pretrained_model[self.config.network])
+                # load pretrained backbone
+            else:
+                print('Loading pretrained model to resume training')
+                self.net_s.load_state_dict(torch.load(self.config.load))  # load pretrained model
+        
+        if self.config.cuda:
+            self.net = self.net.cuda()
+            self.net_s = self.net_s.cuda()
+            self.net_kd = self.net_kd.cuda()
+
+        self.lr = self.config.lr
+        self.wd = self.config.wd
+
+        self.optimizer = torch.optim.Adam([{'params': self.net_s.parameters()}, {'params': self.net_kd.Connectors.parameters()}], lr=self.lr, weight_decay=self.wd)
+        #self.print_network(self.net, 'Incomplete modality RGBD SOD Structure')
+
+    # print the network information and parameter numbers
+    def print_network(self, model, name):
+        num_params_t = 0
+        num_params=0
+        for p in model.parameters():
+            if p.requires_grad:
+                num_params_t += p.numel()
+            else:
+                num_params += p.numel()
+        print(name)
+        print(model)
+        print("The number of trainable parameters: {}".format(num_params_t))
+        print("The number of parameters: {}".format(num_params))
+
+    # build the network
+    '''def build_model(self):
+        self.net = build_model(self.config.network, self.config.arch)
+
+        if self.config.cuda:
+            self.net = self.net.cuda()
+
+        self.lr = self.config.lr
+        self.wd = self.config.wd
+
+        self.optimizer = torch.optim.Adam(self.net.parameters(), lr=self.lr, weight_decay=self.wd)
+
+        self.print_network(self.net, 'JL-DCF Structure')'''
+
+    def test(self):
+        print('Testing...')
+        time_s = time.time()
+        img_num = len(self.test_loader)
+        for i, data_batch in enumerate(self.test_loader):
+            images, name, im_size, depth = data_batch['image'], data_batch['name'][0], np.asarray(data_batch['size']), \
+                                           data_batch['depth']
+            with torch.no_grad():
+                if self.config.cuda:
+                    device = torch.device(self.config.device_id)
+                    images = images.to(device)
+                    depth = depth.to(device)
+
+                #input = torch.cat((images, depth), dim=0)
+                preds,l = self.net_kd(images,depth)
+                #print(preds.shape)
+                #preds = F.interpolate(preds, tuple(im_size), mode='bilinear', align_corners=True)
+                pred = np.squeeze(torch.sigmoid(preds)).cpu().data.numpy()
+
+                pred = (pred - pred.min()) / (pred.max() - pred.min() + 1e-8)
+                multi_fuse = 255 * pred
+                filename = os.path.join(self.config.test_folder, name[:-4] + '_rgbonly.png')
+                cv2.imwrite(filename, multi_fuse)
+        time_e = time.time()
+        print('Speed: %f FPS' % (img_num / (time_e - time_s)))
+        print('Test Done!')
+    
+  
+    # training phase
+    def train(self):
+        iter_num = len(self.train_loader.dataset) // self.config.batch_size_train
+        
+        loss_vals=  []
+
+        for epoch in range(self.config.epoch):
+            r_sal_loss = 0
+            r_sal_loss_item=0
+            for i, data_batch in tqdm(enumerate(self.train_loader)):
+                sal_image, sal_depth,sal_label= data_batch[0], data_batch[1], data_batch[2]
+
+             
+                if (sal_image.size(2) != sal_label.size(2)) or (sal_image.size(3) != sal_label.size(3)):
+                    print('IMAGE ERROR, PASSING```')
+                    continue
+                if self.config.cuda:
+                    device = torch.device(self.config.device_id)
+                    sal_image, sal_depth, sal_label= sal_image.to(device),sal_depth.to(device),sal_label.to(device)
+              
+                self.optimizer.zero_grad()
+               
+                sal_out,dist = self.net_kd(sal_image,sal_depth)
+                
+
+                
+                sal_loss_final =  F.binary_cross_entropy_with_logits(sal_out, sal_label, reduction='sum')
+
+
+                sal_rgb_only_loss = sal_loss_final + dist
+                r_sal_loss += sal_rgb_only_loss.data
+                r_sal_loss_item+=sal_rgb_only_loss.item() * sal_image.size(0)
+                sal_rgb_only_loss.backward()
+                self.optimizer.step()
+
+ 
+            if (epoch + 1) % self.config.epoch_save == 0:
+                torch.save(self.net_kd.state_dict(), '%s/epoch_%d.pth' % (self.config.save_folder, epoch + 1))
+            train_loss=r_sal_loss_item/len(self.train_loader.dataset)
+            writer.add_scalar('training loss', train_loss,epoch)
+            loss_vals.append(train_loss)
+            
+            print('Epoch:[%2d/%2d] | Train Loss : %.3f | Learning rate : %0.7f' % (epoch, self.config.epoch,train_loss,self.optimizer.param_groups[0]['lr']))
+   
+            
+        # save model
+        torch.save(self.net_kd.state_dict(), '%s/final.pth' % self.config.save_folder)
+        
