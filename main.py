@@ -5,24 +5,88 @@ import numpy
 import torch.nn as nn
 from torch.utils import data
 from dataset import get_loader
+from cnn_regressor import CNNRegressor
+from quality_predictor_dataloader import ImageDataTestNOMOS
+from data_dic import data_list
 from solver import Solver
 import time
+def get_test_info(config):
+    if config.sal_mode == 'NJU2K':
+        image_root = '../testsod/NJU2K_test/NJU2K_test'
+        image_source = '../testsod/NJU2K_test/NJU2K_test/test.lst'
+    elif config.sal_mode == 'STERE':
+        image_root = '../testsod/STERE/STERE'
+        image_source = '../testsod/STERE/STERE/test.lst'
+    elif config.sal_mode == 'RGBD135':
+        image_root = '../testsod/RGBD135/RGBD135'
+        image_source = '../testsod/RGBD135/RGBD135/test.lst'
+    elif config.sal_mode == 'LFSD':
+        image_root = '../testsod/LFSD/LFSD'
+        image_source = '../testsod/LFSD/LFSD/test.lst'
+    elif config.sal_mode == 'NLPR':
+        image_root = '../testsod/NLPR/NLPR'
+        image_source = '../testsod/NLPR/NLPR/test.lst'
+    elif config.sal_mode == 'SIP':
+        image_root = '../testsod/SIP/SIP'
+        image_source = '../testsod/SIP/SIP/test.lst'
+    elif config.sal_mode == 'ReDWeb-S':
+        image_root = 'dataset/test/ReDWeb-S/'
+        image_source = 'dataset/test/ReDWeb-S/test.lst'
+    else:
+        raise Exception('Invalid config.sal_mode')
+
+    config.test_root = image_root
+    config.test_list = image_source
 def main(config):
+    #quality prediction
+    shuffle=False
+    pin=True
     if config.mode == 'train':
-        train_loader = get_loader(config)
+        qp_root=config.train_root
+        qp_list=config.train_list
+    elif config.mode == 'test':
+        qp_root=config.test_root
+        qp_list=config.test_list
+    qp_dataset = ImageDataTestNOMOS(qp_root, qp_list, config.qp_image_size)
+    qp_loader = data.DataLoader(dataset=qp_dataset, batch_size=config.qp_batch_size, shuffle=shuffle,
+                                      num_workers=config.num_thread, pin_memory=pin)
+    qp_model = CNNRegressor()
+    if config.cuda:
+        qp_model = qp_model.cuda()
+        device = torch.device(config.device_id)
+        qp_model.load_state_dict(torch.load(config.qp_pretrained_model))
+    else:
+        qp_model = qp_model.cpu()
+        qp_model.load_state_dict(torch.load(config.qp_pretrained_model,map_location=torch.device('cpu')))
+    qp_model.eval()
+    # a dictionary of quality score
+    qp_data={}
+    with torch.no_grad():
+        for image_test,(name,) in qp_loader:
+            if config.cuda:
+                device = torch.device(config.device_id)
+                image_test= image_test.to(device)
+            pred_test=qp_model(image_test)
+            qp_data[name]=pred_test.cpu().numpy().item()
+        qp_sorted_dict = dict(sorted(qp_data.items(), key=lambda x: x[1]))
 
-        if not os.path.exists("%s/demo-%s" % (config.save_folder_rgb, time.strftime("%d"))):
-            os.mkdir("%s/demo-%s" % (config.save_folder_rgb, time.strftime("%d")))
-        config.save_folder_rgb = "%s/demo-%s" % (config.save_folder_rgb, time.strftime("%d"))
-
-        train = Solver(train_loader, None, config)
+    rgb,depth,gt,quality = data_list(qp_root,qp_list,qp_sorted_dict,config)
+    if config.mode == 'train':
+        train_loader = get_loader(qp_root,rgb,depth,gt,quality,config)
+        print('train dataset loaded:')
+        print('numper of training  samples',len(train_loader))
+        if not os.path.exists("%s/demo-%s" % (config.save_folder_depth, time.strftime("%d"))):
+            os.mkdir("%s/demo-%s" % (config.save_folder_depth, time.strftime("%d")))
+        config.save_folder_depth = "%s/demo-%s" % (config.save_folder_depth, time.strftime("%d"))
+        train = Solver(train_loader, None,config)
         train.train()
     elif config.mode == 'test':
         #get_test_info(config)
-        test_loader = get_loader(config, mode='test')
-        if not os.path.exists(config.test_folder_atts_rgb): os.makedirs(config.test_folder_atts_rgb)
-        if not os.path.exists(config.test_folder_dets_rgb): os.makedirs(config.test_folder_dets_rgb)
-
+        test_loader = get_loader(qp_root,rgb,depth,gt,quality,config, mode='test')
+        #path = os.path.join(config.test_folder, config.sal_mode)
+        if not os.path.exists(config.test_folder_atts_depth): os.makedirs(config.test_folder_atts_depth)
+        if not os.path.exists(config.test_folder_dets_depth): os.makedirs(config.test_folder_dets_depth)
+        #config.test_folder=path
         test = Solver(None, test_loader, config)
         test.test()
     else:
@@ -61,10 +125,8 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=16)  # only support 1 now
     
     parser.add_argument('--num_thread', type=int, default=1)
-    parser.add_argument('--RGBload', type=str, default='')  # pretrained JL-DCF model
     parser.add_argument('--Dload', type=str, default='')  # pretrained JL-DCF model
-    parser.add_argument('--save_folder_rgb', type=str, default='checkpoints_rgb/')
-    parser.add_argument('--save_folder_depth', type=str, default='checkpoints_depth/')
+    parser.add_argument('--save_folder_depth', type=str, default='checkpoints/')
     parser.add_argument('--epoch_save', type=int, default=5)
     parser.add_argument('--iter_size', type=int, default=10)
     parser.add_argument('--show_every', type=int, default=50)
@@ -85,11 +147,9 @@ if __name__ == '__main__':
     
 
     # Testing settings
-    parser.add_argument('--RGBmodel', type=str, default='./checkpoints/demo-08/epoch_40.pth')  # Snapshot
-   
-    parser.add_argument('--test_folder_atts_rgb', type=str, default='testint')  # Test results saving folder
-    parser.add_argument('--test_folder_dets_rgb', type=str, default='testint')  # Test results saving folder
-
+    parser.add_argument('--Dmodel', type=str, default='./checkpoints/demo-08/epoch_40.pth')  # Snapshot
+    parser.add_argument('--test_folder_atts_depth', type=str, default='testint')  # Test results saving folder
+    parser.add_argument('--test_folder_dets_depth', type=str, default='testint')  # Test results saving folder
     parser.add_argument('--sal_mode', type=str, default='RGBD135',
                         choices=['NJU2K', 'NLPR', 'STERE', 'RGBD135', 'LFSD', 'SIP', 'ReDWeb-S'])  # Test image dataset
     parser.add_argument('--test_root', type=str, default='../testsod/RGBD135/RGBD135')
@@ -98,11 +158,9 @@ if __name__ == '__main__':
     parser.add_argument('--mode', type=str, default='train', choices=['train', 'test'])
     config = parser.parse_args()
 
-    if not os.path.exists(config.save_folder_rgb):
-        os.mkdir(config.save_folder_rgb)
-
+    if not os.path.exists(config.save_folder_depth):
+        os.mkdir(config.save_folder_depth)
 
     #get_test_info(config)
 
     main(config)
-
