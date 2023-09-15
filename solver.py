@@ -1,7 +1,9 @@
 import torch
 from torch.nn import functional as F
-from teacher.RGBDincomplete import build_model
-from student.RGBDincomplete import build_model_student
+from teacher_rgb.DCF_ResNet_models import DCF_ResNet_rgb_t
+from teacher_depth.DCF_ResNet_models import DCF_ResNet_depth_t
+from student_rgb.DCF_ResNet_models import DCF_ResNet_rgb_s
+from student_depth.DCF_ResNet_models import DCF_ResNet_depth_s
 from distiller import build_model_kd
 import numpy as np
 import os
