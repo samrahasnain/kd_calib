@@ -99,10 +99,10 @@ class aggregation(nn.Module):
         return x
 
 
-class DCF_ResNet(nn.Module):
+class DCF_ResNet_depth_t(nn.Module):
     # resnet based encoder decoder
     def __init__(self, channel=32):
-        super(DCF_ResNet, self).__init__()
+        super(DCF_ResNet_depth_t, self).__init__()
         self.resnet = B2_ResNet()
         self.rfb2_1 = RFB(512, channel)
         self.rfb3_1 = RFB(1024, channel)
