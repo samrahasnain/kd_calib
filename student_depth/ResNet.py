@@ -80,7 +80,7 @@ class Bottleneck(nn.Module):
 
 
 class B2_ResNet(nn.Module):
-    # ResNet50 with two branches
+    # ResNet18 with two branches
     def __init__(self):
         # self.inplanes = 128
         self.inplanes = 64
@@ -91,14 +91,14 @@ class B2_ResNet(nn.Module):
         self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.layer1 = self._make_layer(Bottleneck, 64, 3)
-        self.layer2 = self._make_layer(Bottleneck, 128, 4, stride=2)
-        self.layer3_1 = self._make_layer(Bottleneck, 256, 6, stride=2)
-        self.layer4_1 = self._make_layer(Bottleneck, 512, 3, stride=2)
+        self.layer1 = self._make_layer(BasicBlock, 64, 2)
+        self.layer2 = self._make_layer(BasicBlock, 128, 2, stride=2)
+        self.layer3_1 = self._make_layer(BasicBlock, 256, 2, stride=2)
+        self.layer4_1 = self._make_layer(BasicBlock, 512, 2, stride=2)
 
         self.inplanes = 512
-        self.layer3_2 = self._make_layer(Bottleneck, 256, 6, stride=2)
-        self.layer4_2 = self._make_layer(Bottleneck, 512, 3, stride=2)
+        self.layer3_2 = self._make_layer(BasicBlock, 256, 2, stride=2)
+        self.layer4_2 = self._make_layer(BasicBlock, 512, 2, stride=2)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
