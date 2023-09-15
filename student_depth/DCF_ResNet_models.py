@@ -147,8 +147,8 @@ class DCF_ResNet_depth_s(nn.Module):
         return self.upsample(attention_map), self.upsample(detection_map), x2_2, x3_2, x4_2
 
     def initialize_weights(self):
-        res50 = models.resnet50(pretrained=True)
-        pretrained_dict = res50.state_dict()
+        res18 = models.resnet18(pretrained=True)
+        pretrained_dict = res18.state_dict()
         all_params = {}
         for k, v in self.resnet.state_dict().items():
             if k in pretrained_dict.keys():
