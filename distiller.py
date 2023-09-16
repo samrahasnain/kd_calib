@@ -42,7 +42,7 @@ def build_feature_connector(t_channel, s_channel):
     return nn.Sequential(*C)
   
 class build_model_kd(nn.Module):
-    def __init__(self, t_net, s_net):
+    def __init__(self, t_net_rgb, s_net_rgb , t_net_depth , s_net_depth):
         super(build_model_kd, self).__init__()
         t_channels=[512,256,64,64,1]
         s_channels=[128,64,64,64,1]
