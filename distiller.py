@@ -5,7 +5,22 @@ from scipy.stats import norm
 import scipy
 
 import math
+def cal_score(img, gt, beta=0.3):
+    img = np.float32(img)
+    gt = np.float32(gt)
+    gt *= 1/255.0
+    img *= 1/255.0
+    gt[gt >= 0.5] =1.
+    gt[gt < 0.5] = 0.
+    img[img >= 0.5] = 1.
+    img[img < 0.5] = 0.
 
+    over = (img*gt).sum()
+    union = ((img+gt)>=1).sum()
+    
+    iou = over / (1e-7 + union);
+    return iou
+    
 def distillation_loss(source, target):
     # Calculate L2 loss
     criterion = nn.MSELoss()
