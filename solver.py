@@ -13,17 +13,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torchvision.utils import make_grid
 writer = SummaryWriter('log/run' + time.strftime("%d-%m"))
 import torch.nn as nn
-import argparse
-import os.path as osp
-import os
-size_coarse1 = (192,192)
-size_coarse2 = (96,96)
-size_coarse3 = (48,48)
-size_coarse4 = (24,24)
 from tqdm import trange, tqdm
-
-
-
 
 class Solver(object):
     def __init__(self, train_loader, test_loader, config):
@@ -33,38 +23,36 @@ class Solver(object):
         self.config = config
         self.iter_size = config.iter_size
         self.show_every = config.show_every
-        #self.build_model()
-        self.net = build_model(self.config.network, self.config.arch)
-        self.net_s = build_model_student(self.config.network, self.config.arch)
-        self.net_kd=build_model_kd(self.net, self.net_s)
-        #self.net.eval()
-        
-        print('Loading pre-trained teacher model for kd from %s...' % self.config.model_t)
-        self.net.load_state_dict(torch.load(self.config.model_t))
+        self.net_rgb_t = DCF_ResNet_rgb_t()
+        self.net_depth_t = DCF_ResNet_depth_t()
+        self.net_rgb_s = DCF_ResNet_rgb_s()
+        self.net_depth_s = DCF_ResNet_depth_s()
+        self.net_kd=build_model_kd(self.net_rgb_t,self.net_rgb_s,self.net_depth_t,self.net_depth_s)
+
+        print('Loading pre-trained teacher models for kd from %s and %s...' % (self.config.model_rgb_t,self.config.model_depth_t))
+        self.net_rgb_t.load_state_dict(torch.load(self.config.model_rgb_t))
+        self.net_depth_t.load_state_dict(torch.load(self.config.model_depth_t))
         if config.mode == 'test':
             print('Loading pre-trained model for testing from %s...' % self.config.model)
             self.net_kd.load_state_dict(torch.load(self.config.model, map_location=torch.device('cpu')))
         if config.mode == 'train':
-            if self.config.load == '':
-                print("Loading pre-trained imagenet weights for fine tuning")
-                self.net_s.RGBDInModule.load_pretrained_model(self.config.pretrained_model
-                                                        if isinstance(self.config.pretrained_model, str)
-                                                        else self.config.pretrained_model[self.config.network])
-                # load pretrained backbone
-            else:
-                print('Loading pretrained model to resume training')
-                self.net_s.load_state_dict(torch.load(self.config.load))  # load pretrained model
+            if self.config.load != '':
+                print('Loading pretrained model to resume training from %s and %s...' % (self.config.load_rgb,self.config.load_depth))
+                self.net_rgb_s.load_state_dict(torch.load(self.config.load_rgb))  # load pretrained model
+                self.net_depth_s.load_state_dict(torch.load(self.config.load_depth))  # load pretrained model
         
         if self.config.cuda:
-            self.net = self.net.cuda()
-            self.net_s = self.net_s.cuda()
+            self.net_rgb_t = self.net_rgb_t.cuda()
+            self.net_depth_t = self.net_depth_t.cuda()
+            self.net_rgb_s = self.net_rgb_s.cuda()
+            self.net_depth_s = self.net_depth_s.cuda()
             self.net_kd = self.net_kd.cuda()
 
         self.lr = self.config.lr
         self.wd = self.config.wd
 
-        self.optimizer = torch.optim.Adam([{'params': self.net_s.parameters()}, {'params': self.net_kd.Connectors.parameters()}], lr=self.lr, weight_decay=self.wd)
-        #self.print_network(self.net, 'Incomplete modality RGBD SOD Structure')
+        self.optimizer = torch.optim.Adam([{'params': self.net_rgb_s.parameters()},{'params': self.net_depth_s.parameters()}, {'params': self.net_kd.Connectors.parameters()}], lr=self.lr, weight_decay=self.wd)
+        self.print_network(self.net_kd, 'Incomplete modality RGBD SOD Structure')
 
     # print the network information and parameter numbers
     def print_network(self, model, name):
@@ -80,19 +68,6 @@ class Solver(object):
         print("The number of trainable parameters: {}".format(num_params_t))
         print("The number of parameters: {}".format(num_params))
 
-    # build the network
-    '''def build_model(self):
-        self.net = build_model(self.config.network, self.config.arch)
-
-        if self.config.cuda:
-            self.net = self.net.cuda()
-
-        self.lr = self.config.lr
-        self.wd = self.config.wd
-
-        self.optimizer = torch.optim.Adam(self.net.parameters(), lr=self.lr, weight_decay=self.wd)
-
-        self.print_network(self.net, 'JL-DCF Structure')'''
 
     def test(self):
         print('Testing...')
