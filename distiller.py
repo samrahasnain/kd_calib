@@ -5,7 +5,7 @@ from scipy.stats import norm
 import scipy
 
 import math
-def cal_score(img, gt, beta=0.3):
+def cal_score(img, gt):
     img = np.float32(img)
     gt = np.float32(gt)
     gt *= 1/255.0
@@ -27,39 +27,23 @@ def distillation_loss(source, target):
     loss = criterion(source, target)
     return loss.item()
 
-def build_feature_connector(t_channel, s_channel):
-    C = [nn.Conv2d(s_channel, t_channel, kernel_size=1, stride=1, padding=0, bias=False),
-         nn.BatchNorm2d(t_channel)]
-
-    for m in C:
-        if isinstance(m, nn.Conv2d):
-            n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-            m.weight.data.normal_(0, math.sqrt(2. / n))
-        elif isinstance(m, nn.BatchNorm2d):
-            m.weight.data.fill_(1)
-            m.bias.data.zero_()
-
-    return nn.Sequential(*C)
   
 class build_model_kd(nn.Module):
     def __init__(self, t_net_rgb, s_net_rgb , t_net_depth , s_net_depth):
         super(build_model_kd, self).__init__()
-        t_channels=[512,256,64,64,1]
-        s_channels=[128,64,64,64,1]
-        self.Connectors = nn.ModuleList([build_feature_connector(t, s) for t, s in zip(t_channels, s_channels)])
-        self.t_net = t_net
-        self.s_net = s_net
+        self.t_net_rgb = t_net_rgb
+        self.s_net_rgb = s_net_rgb
+        self.t_net_depth = t_net_depth
+        self.s_net_depth = s_net_depth
 
-    def forward(self, x,y):
-        t1,t2,t3,t4,t5 = self.t_net(x)
-        s1,s2,s3,s4,s5 = self.s_net(y)
-        t_feats=[t5,t4,t3,t2,t1]
-        s_feats=[s5,s4,s3,s2,s1]
-        feat_num = len(t_feats)
-        loss_distill = 0
-        for i in range(feat_num):
-            s_feats[i] = self.Connectors[i](s_feats[i])
-            #print(t_feats[i].shape,s_feats[i].shape)
-            loss_distill += distillation_loss(s_feats[i], t_feats[i].detach())
+    def forward(self, x,y,gt):
+        att_rgb_t,det_rgb_t,xt3,xt4,xt5 = self.t_net_rgb(x)
+        att_rgb_s,det_rgb_s,xs3,xs4,xs5 = self.s_net_rgb(x)
+        att_depth_t,det_depth_t,yt3,yt4,yt5 = self.t_net_depth(y)
+        att_depth_s,det_depth_s,ys3,ys4,ys5 = self.s_net_depth(y)
+        
+        det_corr_depth_t = cal_score(det_depth_t, gt)
+        loss_distill_depth = distillation_loss(det_depth_s, det_corr_depth_t)
+        loss_distill_rgb = distillation_loss(det_rgb_s, det_rgb_t.detach())
 
-        return s1, loss_distill
+        return final, loss_distill_rgb , loss_distill_depth
