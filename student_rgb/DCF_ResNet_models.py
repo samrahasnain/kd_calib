@@ -3,7 +3,7 @@ import torch.nn as nn
 import torchvision.models as models
 
 from .HolisticAttention import HA
-from .ResNet import B2_ResNet
+from .ResNet_rgb_s import B2_ResNet_rgb_s
 
 
 class BasicConv2d(nn.Module):
@@ -103,7 +103,7 @@ class DCF_ResNet_rgb_s(nn.Module):
     # resnet based encoder decoder
     def __init__(self, channel=32):
         super(DCF_ResNet_rgb_s, self).__init__()
-        self.resnet = B2_ResNet()
+        self.resnet = B2_ResNet_rgb_s()
         self.rfb2_1 = RFB(512, channel)
         self.rfb3_1 = RFB(1024, channel)
         self.rfb4_1 = RFB(2048, channel)

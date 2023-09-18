@@ -79,12 +79,12 @@ class Bottleneck(nn.Module):
         return out
 
 
-class B2_ResNet(nn.Module):
+class B2_ResNet_rgb_s(nn.Module):
     # ResNet18 with two branches
     def __init__(self):
         # self.inplanes = 128
         self.inplanes = 64
-        super(B2_ResNet, self).__init__()
+        super(B2_ResNet_rgb_s, self).__init__()
 
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
                                bias=False)
