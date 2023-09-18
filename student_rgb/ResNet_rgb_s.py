@@ -96,7 +96,7 @@ class B2_ResNet_rgb_s(nn.Module):
         self.layer3_1 = self._make_layer(BasicBlock, 256, 2, stride=2)
         self.layer4_1 = self._make_layer(BasicBlock, 512, 2, stride=2)
 
-        self.inplanes = 512
+        self.inplanes = 128
         self.layer3_2 = self._make_layer(BasicBlock, 256, 2, stride=2)
         self.layer4_2 = self._make_layer(BasicBlock, 512, 2, stride=2)
 
