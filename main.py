@@ -75,9 +75,9 @@ def main(config):
         train_loader = get_loader(qp_root,rgb,depth,gt,quality,config)
         print('train dataset loaded:')
         print('numper of training  samples',len(train_loader))
-        if not os.path.exists("%s/demo-%s" % (config.save_folder_depth, time.strftime("%d"))):
-            os.mkdir("%s/demo-%s" % (config.save_folder_depth, time.strftime("%d")))
-        config.save_folder_depth = "%s/demo-%s" % (config.save_folder_depth, time.strftime("%d"))
+        if not os.path.exists("%s/demo-%s" % (config.save_folder, time.strftime("%d"))):
+            os.mkdir("%s/demo-%s" % (config.save_folder, time.strftime("%d")))
+        config.save_folder = "%s/demo-%s" % (config.save_folder, time.strftime("%d"))
         train = Solver(train_loader, None,config)
         train.train()
     elif config.mode == 'test':
@@ -127,7 +127,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_thread', type=int, default=1)
     parser.add_argument('--load_rgb', type=str, default='')  # pretrained JL-DCF model
     parser.add_argument('--load_depth', type=str, default='')  # pretrained JL-DCF model
-    parser.add_argument('--save_folder_depth', type=str, default='checkpoints/')
+    parser.add_argument('--save_folder', type=str, default='checkpoints/')
     parser.add_argument('--epoch_save', type=int, default=5)
     parser.add_argument('--iter_size', type=int, default=10)
     parser.add_argument('--show_every', type=int, default=50)
@@ -161,8 +161,8 @@ if __name__ == '__main__':
     parser.add_argument('--mode', type=str, default='train', choices=['train', 'test'])
     config = parser.parse_args()
 
-    if not os.path.exists(config.save_folder_depth):
-        os.mkdir(config.save_folder_depth)
+    if not os.path.exists(config.save_folder):
+        os.mkdir(config.save_folder)
 
     #get_test_info(config)
 
