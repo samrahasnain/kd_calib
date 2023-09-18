@@ -36,7 +36,7 @@ class Solver(object):
             print('Loading pre-trained model for testing from %s...' % self.config.model)
             self.net_kd.load_state_dict(torch.load(self.config.model, map_location=torch.device('cpu')))
         if config.mode == 'train':
-            if self.config.load != '':
+            if self.config.load_rgb != '':
                 print('Loading pretrained model to resume training from %s and %s...' % (self.config.load_rgb,self.config.load_depth))
                 self.net_rgb_s.load_state_dict(torch.load(self.config.load_rgb))  # load pretrained model
                 self.net_depth_s.load_state_dict(torch.load(self.config.load_depth))  # load pretrained model
