@@ -104,14 +104,14 @@ class DCF_ResNet_rgb_s(nn.Module):
     def __init__(self, channel=32):
         super(DCF_ResNet_rgb_s, self).__init__()
         self.resnet = B2_ResNet_rgb_s()
-        self.rfb2_1 = RFB(512, channel)
-        self.rfb3_1 = RFB(1024, channel)
-        self.rfb4_1 = RFB(2048, channel)
+        self.rfb2_1 = RFB(128, channel)
+        self.rfb3_1 = RFB(256, channel)
+        self.rfb4_1 = RFB(512, channel)
         self.agg1 = aggregation(channel)
 
-        self.rfb2_2 = RFB(512, channel)
-        self.rfb3_2 = RFB(1024, channel)
-        self.rfb4_2 = RFB(2048, channel)
+        self.rfb2_2 = RFB(128, channel)
+        self.rfb3_2 = RFB(256, channel)
+        self.rfb4_2 = RFB(512, channel)
         self.agg2 = aggregation(channel)
         self.upsample = nn.Upsample(scale_factor=8, mode='bilinear', align_corners=True)
 
