@@ -83,7 +83,7 @@ class Solver(object):
                     depth = depth.to(device)
 
                 #input = torch.cat((images, depth), dim=0)
-                preds,l = self.net_kd(images,depth)
+                preds,r,d = self.net_kd(images,depth,depth)
                 #print(preds.shape)
                 #preds = F.interpolate(preds, tuple(im_size), mode='bilinear', align_corners=True)
                 pred = np.squeeze(torch.sigmoid(preds)).cpu().data.numpy()
