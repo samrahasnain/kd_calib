@@ -119,14 +119,14 @@ class Solver(object):
               
                 self.optimizer.zero_grad()
                
-                sal_out,dist = self.net_kd(sal_image,sal_depth)
+                sal_out,dist_rgb,dist_depth = self.net_kd(sal_image,sal_depth)
                 
 
                 
                 sal_loss_final =  F.binary_cross_entropy_with_logits(sal_out, sal_label, reduction='sum')
 
 
-                sal_rgb_only_loss = sal_loss_final + dist
+                sal_rgb_only_loss = sal_loss_final + dist_rgb + dist_depth
                 r_sal_loss += sal_rgb_only_loss.data
                 r_sal_loss_item+=sal_rgb_only_loss.item() * sal_image.size(0)
                 sal_rgb_only_loss.backward()
