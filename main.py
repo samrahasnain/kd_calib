@@ -150,6 +150,7 @@ if __name__ == '__main__':
     # Testing settings
     parser.add_argument('--model_rgb_t', type=str, default='./checkpoints/demo-08/epoch_40.pth')  # Snapshot
     parser.add_argument('--model_depth_t', type=str, default='./checkpoints/demo-08/epoch_40.pth')  # Snapshot
+    parser.add_argument('--model', type=str, default='./checkpoints/demo-08/epoch_40.pth')  # Snapshot
     parser.add_argument('--test_folder_atts_depth', type=str, default='testint')  # Test results saving folder
     parser.add_argument('--test_folder_dets_depth', type=str, default='testint')  # Test results saving folder
     parser.add_argument('--sal_mode', type=str, default='RGBD135',
