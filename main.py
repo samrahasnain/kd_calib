@@ -125,7 +125,8 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=16)  # only support 1 now
     
     parser.add_argument('--num_thread', type=int, default=1)
-    parser.add_argument('--Dload', type=str, default='')  # pretrained JL-DCF model
+    parser.add_argument('--load_rgb', type=str, default='')  # pretrained JL-DCF model
+    parser.add_argument('--load_depth', type=str, default='')  # pretrained JL-DCF model
     parser.add_argument('--save_folder_depth', type=str, default='checkpoints/')
     parser.add_argument('--epoch_save', type=int, default=5)
     parser.add_argument('--iter_size', type=int, default=10)
@@ -147,7 +148,8 @@ if __name__ == '__main__':
     
 
     # Testing settings
-    parser.add_argument('--Dmodel', type=str, default='./checkpoints/demo-08/epoch_40.pth')  # Snapshot
+    parser.add_argument('--model_rgb_t', type=str, default='./checkpoints/demo-08/epoch_40.pth')  # Snapshot
+    parser.add_argument('--model_depth_t', type=str, default='./checkpoints/demo-08/epoch_40.pth')  # Snapshot
     parser.add_argument('--test_folder_atts_depth', type=str, default='testint')  # Test results saving folder
     parser.add_argument('--test_folder_dets_depth', type=str, default='testint')  # Test results saving folder
     parser.add_argument('--sal_mode', type=str, default='RGBD135',
