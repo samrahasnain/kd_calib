@@ -51,15 +51,15 @@ class ShuffleChannelAttention(nn.Module):
         # Move input tensor to the same device as the model and ensure it's of the same data type
         x = x.to(self.se[0].weight.device, dtype=self.se[0].weight.dtype)
         max_result = self.maxpool(x)
-        print('CSA max', max_result.shape)
+        #print('CSA max', max_result.shape)
         shuffled_in = max_result.view(b, self.g, c // self.g, 1, 1).permute(0, 2, 1, 3, 4).reshape(b, c, 1, 1)
-        print('CSA shuffled_in', shuffled_in.shape)
+        #print('CSA shuffled_in', shuffled_in.shape)
         max_out = self.se(shuffled_in)
-        print('CSA max_out', max_out.shape)
+        #print('CSA max_out', max_out.shape)
         output = self.sigmoid(max_out)
-        print('CSA', output.shape)
+        #print('CSA', output.shape)
         output = output.view(b, c, 1, 1)
-        print('CSA', output.shape)
+        #print('CSA', output.shape)
         return output
 
 def adapter(xt3, xt4, xt5, yt3, yt4, yt5, s3, s4, s5):
@@ -68,7 +68,7 @@ def adapter(xt3, xt4, xt5, yt3, yt4, yt5, s3, s4, s5):
     up4 = nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True)
     up8 = nn.ConvTranspose2d(32, 1, 2,8,0,4,3 )
     SCA = ShuffleChannelAttention()
-    print('distillation', xt3.shape, xt4.shape, xt5.shape, yt3.shape, yt4.shape, yt5.shape, s3.shape, s4.shape, s5.shape)
+    #print('distillation', xt3.shape, xt4.shape, xt5.shape, yt3.shape, yt4.shape, yt5.shape, s3.shape, s4.shape, s5.shape)
     # Move input tensors to the same device as the model and ensure they're of the same data type
     xt3, xt4, xt5, yt3, yt4, yt5, s3, s4, s5 = map(lambda x: x.to(SCA.se[0].weight.device, dtype=SCA.se[0].weight.dtype),
                                                 (xt3, xt4, xt5, yt3, yt4, yt5, s3, s4, s5))
