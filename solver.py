@@ -64,7 +64,7 @@ class Solver(object):
             else:
                 num_params += p.numel()
         print(name)
-        print(model)
+        #print(model)
         print("The number of trainable parameters: {}".format(num_params_t))
         print("The number of parameters: {}".format(num_params))
 
