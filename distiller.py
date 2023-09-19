@@ -27,42 +27,48 @@ def distillation_loss(source, target):
     loss = criterion(source, target)
     return loss.item()
 
+import torch
+
 class ShuffleChannelAttention(nn.Module):
     def __init__(self):
         super(ShuffleChannelAttention, self).__init__()
 
-        self.maxpool=nn.AdaptiveMaxPool2d(1)
-        self.g=4
-        self.se=nn.Sequential(
-            nn.Conv2d(32,32//8,1,padding=1,bias=False),
+        self.maxpool = nn.AdaptiveMaxPool2d(1)
+        self.g = 4
+        self.se = nn.Sequential(
+            nn.Conv2d(32, 32 // 8, 1, padding=1, bias=False),
             nn.ReLU(),
-            nn.Conv2d(32//8,32,3,bias=False)
+            nn.Conv2d(32 // 8, 32, 3, bias=False)
         )
-        self.sigmoid=nn.Sigmoid()
-        
-    
-    def forward(self, x) :
-        b,c,h,w=x.shape
-        max_result=self.maxpool(x)
-        print('CSA max',max_result.shape)
-        shuffled_in=max_result.view(b,self.g,c//self.g,1,1).permute(0,2,1,3,4).reshape(b,c,1,1)
-        print('CSA shuffled_in',shuffled_in.shape)
-        max_out=self.se(shuffled_in)
-        print('CSA max_out',max_out.shape)
-        output=self.sigmoid(max_out)
-        print('CSA',output.shape)
-        output=output.view(b,c,1,1)
-        print('CSA',output.shape)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        b, c, h, w = x.shape
+        # Move input tensor to the same device as the model and ensure it's of the same data type
+        x = x.to(self.se[0].weight.device, dtype=self.se[0].weight.dtype)
+        max_result = self.maxpool(x)
+        print('CSA max', max_result.shape)
+        shuffled_in = max_result.view(b, self.g, c // self.g, 1, 1).permute(0, 2, 1, 3, 4).reshape(b, c, 1, 1)
+        print('CSA shuffled_in', shuffled_in.shape)
+        max_out = self.se(shuffled_in)
+        print('CSA max_out', max_out.shape)
+        output = self.sigmoid(max_out)
+        print('CSA', output.shape)
+        output = output.view(b, c, 1, 1)
+        print('CSA', output.shape)
         return output
-        
-def adapter(xt3,xt4,xt5,yt3,yt4,yt5,s3,s4,s5):
+
+def adapter(xt3, xt4, xt5, yt3, yt4, yt5, s3, s4, s5):
     m = nn.Softmax(dim=1)
     SCA = ShuffleChannelAttention()
-    print('distillation',xt3.shape,xt4.shape,xt5.shape,yt3.shape,yt4.shape,yt5.shape,s3.shape,s4.shape,s5.shape)
+    print('distillation', xt3.shape, xt4.shape, xt5.shape, yt3.shape, yt4.shape, yt5.shape, s3.shape, s4.shape, s5.shape)
+    # Move input tensors to the same device as the model and ensure they're of the same data type
+    xt3, xt4, xt5, yt3, yt4, yt5, s3, s4, s5 = map(lambda x: x.to(SCA.se[0].weight.device, dtype=SCA.se[0].weight.dtype),
+                                                (xt3, xt4, xt5, yt3, yt4, yt5, s3, s4, s5))
     s3 = SCA(s3)
     f3 = (xt3 * s3) + (yt3 * s3)
     f3_ = m(f3)
-    
+
     s4 = SCA(s4)
     f4 = (xt4 * s4) + (yt4 * s4)
     f4_ = m(f4)
@@ -73,7 +79,6 @@ def adapter(xt3,xt4,xt5,yt3,yt4,yt5,s3,s4,s5):
 
     final = f3_ + f4_ + f5_
     return final
-    
 
     
 class build_model_kd(nn.Module):
