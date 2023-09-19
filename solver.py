@@ -52,13 +52,30 @@ class Solver(object):
         self.wd = self.config.wd
 
         #self.optimizer = torch.optim.Adam([{'params': self.net_rgb_s.parameters()},{'params': self.net_depth_s.parameters()}, {'params': self.net_kd.parameters()}], lr=self.lr, weight_decay=self.wd)
-        # Separate the model parameters into three distinct lists
+        # Get parameters for each model
         params_rgb_s = list(self.net_rgb_s.parameters())
         params_depth_s = list(self.net_depth_s.parameters())
         params_kd = list(self.net_kd.parameters())
 
-        # Define the optimizer with three distinct parameter groups
-        self.optimizer = torch.optim.Adam([{'params': params_rgb_s},{'params': params_depth_s},{'params': params_kd}], lr=self.lr, weight_decay=self.wd)
+        # Create a set to keep track of parameters already included in a parameter group
+        params_set = set()
+
+        # Initialize the parameter groups list
+        param_groups = []
+
+        # Add parameters of the student models to parameter groups
+        param_groups.append({'params': params_rgb_s, 'name': 'net_rgb_s'})
+        param_groups.append({'params': params_depth_s, 'name': 'net_depth_s'})
+
+        # Iterate over the parameters of the knowledge distillation model
+        for param in params_kd:
+            # Check if the parameter has not been included in a parameter group yet
+            if param not in params_set:
+                param_groups.append({'params': [param], 'name': 'net_kd'})
+                params_set.add(param)
+
+        # Define the optimizer with parameter groups
+        self.optimizer = torch.optim.Adam(param_groups, lr=self.lr, weight_decay=self.wd)
 
         self.print_network(self.net_kd, 'Incomplete modality RGBD SOD Structure')
 
