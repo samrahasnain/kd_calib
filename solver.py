@@ -107,7 +107,7 @@ class Solver(object):
             r_sal_loss = 0
             r_sal_loss_item=0
             for i, data_batch in tqdm(enumerate(self.train_loader)):
-                sal_image, sal_depth,sal_label= data_batch[0], data_batch[1], data_batch[2]
+                sal_image, sal_depth,sal_label= data_batch['sal_image'], data_batch['sal_depth'], data_batch['sal_label']
 
              
                 if (sal_image.size(2) != sal_label.size(2)) or (sal_image.size(3) != sal_label.size(3)):
