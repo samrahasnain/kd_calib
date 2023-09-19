@@ -28,14 +28,17 @@ def distillation_loss(source, target):
     return loss.item()
 
 class ShuffleChannelAttention(nn.Module):
-    def __init__(self, channel=32,reduction=8,kernel_size=3,groups=4):
+    def __init__(self):
         super(ShuffleChannelAttention, self).__init__()
+        self.channel=32
+        self.reduction=8
+        
         self.maxpool=nn.AdaptiveMaxPool2d(1)
-        self.g=groups
+        self.g=4
         self.se=nn.Sequential(
-            nn.Conv2d(channel,channel//reduction,1,padding=1,bias=False),
+            nn.Conv2d(self.channel,self.channel//self.reduction,1,padding=1,bias=False),
             nn.ReLU(),
-            nn.Conv2d(channel//reduction,channel,3,bias=False)
+            nn.Conv2d(self.channel//self.reduction,self.channel,3,bias=False)
         )
         self.sigmoid=nn.Sigmoid()
         
