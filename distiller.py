@@ -86,8 +86,7 @@ def adapter(xt3, xt4, xt5, yt3, yt4, yt5, s3, s4, s5):
 
     final = f3_ + up2(f4_) + up4(f5_)
     final = up8(final)
-    if final.device.type == 'cuda':
-        print("tensor_cpu is on CUDA (GPU)")
+
     return final
 
     
@@ -112,5 +111,5 @@ class build_model_kd(nn.Module):
         loss_distill_depth = distillation_loss(det_depth_s, det_corr_depth_t)
         loss_distill_rgb = distillation_loss(det_rgb_s, det_rgb_t.detach())
         final = (rgb_final + depth_final) + (rgb_final * depth_final)
-        print(final,loss_distill_rgb , loss_distill_depth)
+        
         return final, loss_distill_rgb , loss_distill_depth
