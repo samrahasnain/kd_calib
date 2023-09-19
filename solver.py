@@ -119,7 +119,7 @@ class Solver(object):
               
                 self.optimizer.zero_grad()
                
-                sal_out,dist_rgb,dist_depth = self.net_kd(sal_image,sal_depth)
+                sal_out,dist_rgb,dist_depth = self.net_kd(sal_image,sal_depth,sal_label)
                 
 
                 
