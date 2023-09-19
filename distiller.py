@@ -86,6 +86,8 @@ def adapter(xt3, xt4, xt5, yt3, yt4, yt5, s3, s4, s5):
 
     final = f3_ + up2(f4_) + up4(f5_)
     final = up8(final)
+    if final.device.type == 'cuda':
+        print("tensor_cpu is on CUDA (GPU)")
     return final
 
     
