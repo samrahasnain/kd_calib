@@ -51,7 +51,7 @@ class Solver(object):
         self.lr = self.config.lr
         self.wd = self.config.wd
 
-        self.optimizer = torch.optim.Adam([{'params': self.net_rgb_s.parameters()},{'params': self.net_depth_s.parameters()}, {'params': self.net_kd.Connectors.parameters()}], lr=self.lr, weight_decay=self.wd)
+        self.optimizer = torch.optim.Adam([{'params': self.net_rgb_s.parameters()},{'params': self.net_depth_s.parameters()}, {'params': self.net_kd.parameters()}], lr=self.lr, weight_decay=self.wd)
         self.print_network(self.net_kd, 'Incomplete modality RGBD SOD Structure')
 
     # print the network information and parameter numbers
