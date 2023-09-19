@@ -126,28 +126,28 @@ class DCF_ResNet_rgb_s(nn.Module):
         x = self.resnet.maxpool(x)
         x1 = self.resnet.layer1(x)  # 256 x 64 x 64
         x2 = self.resnet.layer2(x1)  # 512 x 32 x 32
-        print('x2',x2.shape)
+        #print('x2',x2.shape)
         x2_1 = x2
         x3_1 = self.resnet.layer3_1(x2_1)  # 1024 x 16 x 16
-        print('x3_1',x3_1.shape)
+        #print('x3_1',x3_1.shape)
         x4_1 = self.resnet.layer4_1(x3_1)  # 2048 x 8 x 8
-        print('x4_1',x4_1.shape)
+        #print('x4_1',x4_1.shape)
         x2_1 = self.rfb2_1(x2_1)
         x3_1 = self.rfb3_1(x3_1)
         x4_1 = self.rfb4_1(x4_1)
         attention_map = self.agg1(x4_1, x3_1, x2_1)
 
         x2_2 = self.HA(attention_map.sigmoid(), x2)
-        print('x2_2',x2_2.shape)
+        #print('x2_2',x2_2.shape)
         x3_2 = self.resnet.layer3_2(x2_2)  # 1024 x 16 x 16
-        print('x3_2',x3_2.shape)
+        #print('x3_2',x3_2.shape)
         x4_2 = self.resnet.layer4_2(x3_2)  # 2048 x 8 x 8
-        print('x4_2',x4_2.shape)
+        #print('x4_2',x4_2.shape)
         x2_2 = self.rfb2_2(x2_2)
         x3_2 = self.rfb3_2(x3_2)
         x4_2 = self.rfb4_2(x4_2)
         detection_map = self.agg2(x4_2, x3_2, x2_2)
-        print('rgb student',x2_2.shape, x3_2.shape, x4_2.shape)
+        #print('rgb student',x2_2.shape, x3_2.shape, x4_2.shape)
         # return self.upsample(attention_map), self.upsample(detection_map)
         return self.upsample(attention_map), self.upsample(detection_map), x2_2, x3_2, x4_2
 
