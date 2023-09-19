@@ -112,4 +112,5 @@ class build_model_kd(nn.Module):
         loss_distill_depth = distillation_loss(det_depth_s, det_corr_depth_t)
         loss_distill_rgb = distillation_loss(det_rgb_s, det_rgb_t.detach())
         final = (rgb_final + depth_final) + (rgb_final * depth_final)
+        print(final.shape)
         return final, loss_distill_rgb , loss_distill_depth
