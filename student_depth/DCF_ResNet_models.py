@@ -143,7 +143,7 @@ class DCF_ResNet_depth_s(nn.Module):
         x3_2 = self.rfb3_2(x3_2)
         x4_2 = self.rfb4_2(x4_2)
         detection_map = self.agg2(x4_2, x3_2, x2_2)
-
+        print('depth student',x2_2.shape, x3_2.shape, x4_2.shape)
         # return self.upsample(attention_map), self.upsample(detection_map)
         return self.upsample(attention_map), self.upsample(detection_map), x2_2, x3_2, x4_2
 
