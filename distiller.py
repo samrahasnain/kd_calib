@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from scipy.stats import norm
 import scipy
+import numpy as np
 
 import math
 def cal_score(img, gt):
