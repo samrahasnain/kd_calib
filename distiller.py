@@ -59,16 +59,17 @@ class ShuffleChannelAttention(nn.Module):
         
 def adapter(xt3,xt4,xt5,yt3,yt4,yt5,s3,s4,s5):
     m = nn.Softmax(dim=1)
+    SCA = ShuffleChannelAttention()
     print('distillation',xt3.shape,xt4.shape,xt5.shape,yt3.shape,yt4.shape,yt5.shape,s3.shape,s4.shape,s5.shape)
-    s3 = ShuffleChannelAttention(s3)
+    s3 = SCA(s3)
     f3 = (xt3 * s3) + (yt3 * s3)
     f3_ = m(f3)
     
-    s4 = ShuffleChannelAttention(s4)
+    s4 = SCA(s4)
     f4 = (xt4 * s4) + (yt4 * s4)
     f4_ = m(f4)
 
-    s5 = ShuffleChannelAttention(s5)
+    s5 = SCA(s5)
     f5 = (xt5 * s5) + (yt5 * s5)
     f5_ = m(f5)
 
