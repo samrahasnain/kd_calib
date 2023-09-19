@@ -43,9 +43,13 @@ class ShuffleChannelAttention(nn.Module):
     def forward(self, x) :
         b,c,h,w=x.shape
         max_result=self.maxpool(x)
+        print('CSA max',max_result.shape)
         shuffled_in=max_result.view(b,self.g,c//self.g,1,1).permute(0,2,1,3,4).reshape(b,c,1,1)
+        print('CSA shuffled_in',shuffled_in.shape)
         max_out=self.se(shuffled_in)
+        print('CSA max_out',max_out.shape)
         output=self.sigmoid(max_out)
+        print('CSA',output.shape)
         output=output.view(b,c,1,1)
         print('CSA',output.shape)
         return output
