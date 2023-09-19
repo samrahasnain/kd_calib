@@ -36,7 +36,7 @@ class ShuffleChannelAttention(nn.Module):
         self.se=nn.Sequential(
             nn.Conv2d(32,32//8,1,padding=1,bias=False),
             nn.ReLU(),
-            nn.Conv2d(32//8,32l,3,bias=False)
+            nn.Conv2d(32//8,32,3,bias=False)
         )
         self.sigmoid=nn.Sigmoid()
         
