@@ -99,7 +99,7 @@ class Solver(object):
   
     # training phase
     def train(self):
-        iter_num = len(self.train_loader.dataset) // self.config.batch_size_train
+        iter_num = len(self.train_loader.dataset) // self.config.batch_size
         
         loss_vals=  []
 
