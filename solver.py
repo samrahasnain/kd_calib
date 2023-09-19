@@ -124,7 +124,14 @@ class Solver(object):
                 sal_out,dist_rgb,dist_depth = self.net_kd(sal_image,sal_depth,sal_label)
                 
                 print('solver',sal_out.shape,sal_label.shape)
-                
+                if sal_out.device.type == 'cuda':
+                    print("tensor_cpu is on CUDA (GPU)")
+                else:
+                    print("tensor_cpu is on CPU")
+                if sal_label.device.type == 'cuda':
+                    print("tlabel is on CUDA (GPU)")
+                else:
+                    print("labelis on CPU")
                 sal_loss_final =  F.binary_cross_entropy_with_logits(sal_out, sal_label, reduction='sum')
 
 
