@@ -66,26 +66,12 @@ def adapter(xt3,xt4,xt5,yt3,yt4,yt5,s3,s4,s5):
     final = f3_ + f4_ + f5_
     return final
     
-def build_feature_connector(t_channel, s_channel):
-    C = [nn.Conv2d(s_channel, t_channel, kernel_size=1, stride=1, padding=0, bias=False),
-         nn.BatchNorm2d(t_channel)]
 
-    for m in C:
-        if isinstance(m, nn.Conv2d):
-            n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-            m.weight.data.normal_(0, math.sqrt(2. / n))
-        elif isinstance(m, nn.BatchNorm2d):
-            m.weight.data.fill_(1)
-            m.bias.data.zero_()
-
-    return nn.Sequential(*C) 
     
 class build_model_kd(nn.Module):
     def __init__(self, t_net_rgb, s_net_rgb , t_net_depth , s_net_depth):
         super(build_model_kd, self).__init__()
-        t_channels=[512,1024,2048]
-        s_channels=[128,256,512]
-        self.Connectors = nn.ModuleList([build_feature_connector(t, s) for t, s in zip(t_channels, s_channels)])
+
         self.t_net_rgb = t_net_rgb
         self.s_net_rgb = s_net_rgb
         self.t_net_depth = t_net_depth
@@ -96,13 +82,9 @@ class build_model_kd(nn.Module):
         att_rgb_s,det_rgb_s,xs3,xs4,xs5 = self.s_net_rgb(x)
         att_depth_t,det_depth_t,yt3,yt4,yt5 = self.t_net_depth(y)
         att_depth_s,det_depth_s,ys3,ys4,ys5 = self.s_net_depth(y)
-        sr_feats=[xs3,xs4,xs5]
-        sd_feats=[ys3,ys4,ys5 ]
-        for i in range(len(sr_feats)):
-            sr_feats[i] = self.Connectors[i](sr_feats[i])
-            sd_feats[i] = self.Connectors[i](sd_feats[i])
-        rgb_final = adapter(xt3,xt4,xt5,yt3,yt4,yt5,sr_feats[0],sr_feats[1],sr_feats[2])
-        depth_final = adapter(xt3,xt4,xt5,yt3,yt4,yt5,sd_feats[0],sd_feats[1],sd_feats[2])
+
+        rgb_final = adapter(xt3,xt4,xt5,yt3,yt4,yt5,xs3,xs4,xs5)
+        depth_final = adapter(xt3,xt4,xt5,yt3,yt4,yt5,ys3,ys4,ys5)
         det_corr_depth_t = cal_score(det_depth_t, gt)
         loss_distill_depth = distillation_loss(det_depth_s, det_corr_depth_t)
         loss_distill_rgb = distillation_loss(det_rgb_s, det_rgb_t.detach())
