@@ -47,10 +47,12 @@ class ShuffleChannelAttention(nn.Module):
         max_out=self.se(shuffled_in)
         output=self.sigmoid(max_out)
         output=output.view(b,c,1,1)
+        print('CSA',output.shape)
         return output
         
 def adapter(xt3,xt4,xt5,yt3,yt4,yt5,s3,s4,s5):
     m = nn.Softmax(dim=1)
+    print('distillation',xt3.shape,xt4.shape,xt5.shape,yt3.shape,yt4.shape,yt5.shape,s3.shape,s4.shape,s5.shape)
     s3 = ShuffleChannelAttention(s3)
     f3 = (xt3 * s3) + (yt3 * s3)
     f3_ = m(f3)
