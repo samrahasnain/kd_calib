@@ -66,7 +66,7 @@ def adapter(xt3, xt4, xt5, yt3, yt4, yt5, s3, s4, s5):
     m = nn.Softmax(dim=1)
     up2 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
     up4 = nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True)
-    up8 = nn.ConvTranspose2d(32, 1, kernel_size=4, stride=8, padding=0, bias=False )
+    up8 = nn.ConvTranspose2d(32, 1, 2,8,0,4,3 )
     SCA = ShuffleChannelAttention()
     print('distillation', xt3.shape, xt4.shape, xt5.shape, yt3.shape, yt4.shape, yt5.shape, s3.shape, s4.shape, s5.shape)
     # Move input tensors to the same device as the model and ensure they're of the same data type
