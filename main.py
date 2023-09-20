@@ -84,9 +84,9 @@ def main(config):
         #get_test_info(config)
         test_loader = get_loader(qp_root,rgb,depth,gt,quality,config, mode='test')
         #path = os.path.join(config.test_folder, config.sal_mode)
-        if not os.path.exists(config.test_folder_atts_depth): os.makedirs(config.test_folder_atts_depth)
-        if not os.path.exists(config.test_folder_dets_depth): os.makedirs(config.test_folder_dets_depth)
-        #config.test_folder=path
+        if not os.path.exists(config.test_folder): os.makedirs(config.test_folder)
+        
+        config.test_folder=path
         test = Solver(None, test_loader, config)
         test.test()
     else:
@@ -151,8 +151,8 @@ if __name__ == '__main__':
     parser.add_argument('--model_rgb_t', type=str, default='./checkpoints/demo-08/epoch_40.pth')  # Snapshot
     parser.add_argument('--model_depth_t', type=str, default='./checkpoints/demo-08/epoch_40.pth')  # Snapshot
     parser.add_argument('--model', type=str, default='./checkpoints/demo-08/epoch_40.pth')  # Snapshot
-    parser.add_argument('--test_folder_atts_depth', type=str, default='testint')  # Test results saving folder
-    parser.add_argument('--test_folder_dets_depth', type=str, default='testint')  # Test results saving folder
+    parser.add_argument('--test_folder', type=str, default='testint')  # Test results saving folder
+   
     parser.add_argument('--sal_mode', type=str, default='RGBD135',
                         choices=['NJU2K', 'NLPR', 'STERE', 'RGBD135', 'LFSD', 'SIP', 'ReDWeb-S'])  # Test image dataset
     parser.add_argument('--test_root', type=str, default='../testsod/RGBD135/RGBD135')
