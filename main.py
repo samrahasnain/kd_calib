@@ -83,8 +83,8 @@ def main(config):
     elif config.mode == 'test':
         #get_test_info(config)
         test_loader = get_loader(qp_root,rgb,depth,gt,quality,config, mode='test')
-        #path = os.path.join(config.test_folder, config.sal_mode)
-        if not os.path.exists(config.test_folder): os.makedirs(config.test_folder)
+        path = os.path.join(config.test_folder, config.sal_mode)
+        if not os.path.exists(path): os.makedirs(path)
         
         config.test_folder=path
         test = Solver(None, test_loader, config)
